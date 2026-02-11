@@ -8,7 +8,6 @@
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
     
     <style>
-        /* Sayfanın genel yapısı: her şey alt alta */
         body { 
             background-color: #2c3e50; color: white; text-align: center; 
             font-family: 'Segoe UI', sans-serif; 
@@ -17,17 +16,18 @@
             min-height: 100vh; margin: 0; 
         }
 
-        #girisEkrani {
+        /* Ana Kapsayıcı */
+        .ana-panel {
             display: flex;
-            flex-direction: column; /* İçerideki her şeyin alt alta gelmesini garantiler */
+            flex-direction: column;
             align-items: center;
             width: 100%;
         }
 
-        /* LOGO ALANI: Sadece logolar yan yana */
+        /* LOGO ALANI */
         .logo-konteyner {
             display: flex;
-            flex-direction: row; /* Sadece logolar yan yana */
+            flex-direction: row;
             justify-content: center;
             align-items: center;
             gap: 20px;
@@ -36,10 +36,18 @@
         }
 
         .logo-resim {
-            width: 100px; /* Bilgisayar boyutu */
+            width: 100px;
             height: auto;
             max-height: 100px;
             object-fit: contain;
+        }
+
+        /* FORM ELEMANLARI */
+        .form-grubu {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            width: 100%;
         }
 
         h1 { margin: 10px 0; font-weight: 300; font-size: 28px; }
@@ -48,7 +56,6 @@
             padding: 15px; font-size: 18px; border-radius: 10px; 
             border: none; margin-top: 15px; width: 85%; max-width: 350px; 
             box-shadow: 0 4px 6px rgba(0,0,0,0.1); outline: none;
-            display: block; /* Yan yana gelmelerini engeller */
         }
 
         select { background-color: #34495e; color: white; }
@@ -56,53 +63,52 @@
         button { background-color: #e74c3c; color: white; cursor: pointer; font-weight: bold; }
         button:disabled { background-color: #95a5a6; }
 
-        .gizli { display: none; }
+        .gizli { display: none !important; }
         .hata { color: #ff6b6b; font-weight: bold; margin-top: 15px; display: none; }
         #sifreDurumu { font-size: 14px; margin-top: 5px; color: #f39c12; }
 
-        /* MOBİL ÖZEL AYARI */
+        /* Başarı Ekranı Yazıları */
+        #basariliEkrani h2 { color: #2ecc71; margin-top: 10px; }
+
         @media (max-width: 600px) {
-            .logo-resim {
-                width: 130px; /* Mobilde daha büyük logolar */
-                max-height: 130px;
-            }
-            .logo-konteyner {
-                gap: 15px;
-            }
-            h1 { font-size: 32px; } /* Mobilde başlık daha belirgin */
+            .logo-resim { width: 130px; max-height: 130px; }
+            h1 { font-size: 32px; }
         }
     </style>
 </head>
 <body>
 
-    <div id="girisEkrani">
+    <div class="ana-panel">
         <div class="logo-konteyner">
             <img src="logo1.png" alt="Logo 1" class="logo-resim">
             <img src="logo2.png" alt="Logo 2" class="logo-resim">
         </div>
 
-        <h1>⏱️ Ders Süresi</h1>
-        <p id="sifreDurumu">Sistem Bağlanıyor...</p>
-        
-        <select id="sureSecimi">
-            <option value="40" selected>40 Dakika (Ders)</option>
-            <option value="80">80 Dakika (Blok Ders)</option>
-            <option value="10">10 Dakika (Teneffüs)</option>
-            <option value="1">1 Dakika (Test/Acil)</option>
-        </select>
+        <div id="girisFormu" class="form-grubu">
+            <h1>⏱️ Ders Süresi</h1>
+            <p id="sifreDurumu">Sistem Bağlanıyor...</p>
+            
+            <select id="sureSecimi">
+                <option value="40" selected>1 Ders</option>
+                <option value="100">2 Ders (Teneffüste Kapanmaz)</option>
+                <option value="180">3 Saat</option>
+                <option value="1">1 Dakika (Test/Acil)</option>
+            </select>
 
-        <input type="number" id="sifreKutusu" placeholder="Öğretmen Şifresi" inputmode="numeric">
-        <button id="btnBaslat" onclick="kilidiAc()" disabled>YÜKLENİYOR...</button>
-        <p id="hataMesaji" class="hata">Hatalı Şifre!</p>
-    </div>
+            <input type="number" id="sifreKutusu" placeholder="Öğretmen Şifresi" inputmode="numeric">
+            <button id="btnBaslat" onclick="kilidiAc()" disabled>YÜKLENİYOR...</button>
+            <p id="hataMesaji" class="hata">Hatalı Şifre!</p>
+        </div>
 
-    <div id="basariliEkrani" class="gizli">
-        <h1 style="font-size: 80px;">✅</h1>
-        <h2>Ders Başlatıldı!</h2>
-        <p>Bilgisayar kilidi açıldı. İyi dersler.</p>
+        <div id="basariliEkrani" class="form-grubu gizli">
+            <span style="font-size: 80px;">✅</span>
+            <h2>Ders Başlatıldı!</h2>
+            <p>Tahta kilidi açıldı.<br>İyi dersler dileriz.</p>
+        </div>
     </div>
 
     <script>
+        // --- FIREBASE BAĞLANTISI ---
         var benimLinkim = "https://okulkilit-0303-default-rtdb.firebaseio.com"; 
 
         const firebaseConfig = { databaseURL: benimLinkim };
@@ -133,14 +139,16 @@
                 if (tahtaID) {
                     document.getElementById("btnBaslat").disabled = true;
                     document.getElementById("btnBaslat").innerText = "İşleniyor...";
+
                     database.ref('Tahtalar/' + tahtaID + '/durum').set("acik_" + secilenSure)
                     .then(() => {
-                        document.getElementById("girisEkrani").classList.add("gizli");
+                        // Giriş kısmını tamamen kaldır, başarı kısmını göster
+                        document.getElementById("girisFormu").classList.add("gizli");
                         document.getElementById("basariliEkrani").classList.remove("gizli");
                     })
                     .catch((error) => { alert("Hata: " + error.message); });
                 } else { 
-                    alert("ID bulunamadı!"); 
+                    alert("Tahta ID bulunamadı! QR kodu tekrar okutun."); 
                 }
             } else {
                 hataKutusu.style.display = "block";
